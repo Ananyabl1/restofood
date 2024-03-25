@@ -1146,85 +1146,151 @@ const Restaurantlist=[
     }
   }
 ];
-const Restaurantcard=({cloudinaryImageId,name,costForTwo,avgRating,cuisines,areaName,locality})=>{
-  return(
+const Restaurantcard = ({
+  cloudinaryImageId,
+  name,
+  costForTwo,
+  avgRating,
+  cuisines,
+  areaName,
+  locality,
+}) => {
+  return (
     <>
-    <div className="card">
-      <img className="cakeroom"  src={"https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto,w_660/"+cloudinaryImageId}/>
-      <h2>{name}</h2>
-      <h4>{costForTwo}{","}{element}{avgRating}</h4>
-      <h3>{cuisines.join(", ")}</h3>
-      <h4>{areaName}{","}{locality}</h4>
-    
-    </div>
-  </> 
-
-
-  );
-}
-
-
-function filterData(searchText, restaurants){
-  const filterData=restaurants.filter((restaurant)=>restaurant.info.name.includes(searchText));
-  return filterData;
-
-}
-const Body=()=>{
-  const[restaurants,setrestaurants]=useState(Restaurantlist);
-  const[searchText,setsearchText]=useState("");
-  useEffect(()=>{
-  getRestaurants();
-},[]);
-
-async function getRestaurants(){
-  const data = await fetch("https://www.swiggy.com/dapi/restaurants/list/v5?lat=12.2958104&lng=76.6393805&is-seo-homepage-enabled=true&page_type=DESKTOP_WEB_LISTING");
-  const json = await data.json();
-  console.log(json);
-  setrestaurants(json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle?.restaurants);
-}
-console.log("render");
-
-
-  return(
-
-    <>
-    <div className="search-container"><input type="text" className="search-input" placeholder="search" value={searchText} onChange={(e)=>{
-      setsearchText(e.target.value);
-    }}/>
-    <button className="search-btn" onClick={()=>
-    {
-      const data = filterData(searchText,restaurants);
-      setrestaurants(data);
-    }}>search</button></div>
-    <div className="restaurant-list">
-      {restaurants.map((restaurant)=>{
-        return <Restaurantcard {...restaurant.info} key={restaurant.info.id}/>
-      })}
-      
-          
+      <div className="card">
+        <img
+          className="cakeroom"
+          src={
+            "https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto,w_660/" +
+            cloudinaryImageId
+          }
+        />
+        <h2>{name}</h2>
+        <h4>
+          {costForTwo}
+          {","}
+          {element}
+          {avgRating}
+        </h4>
+        <h3>{cuisines.join(", ")}</h3>
+        <h4>
+          {areaName}
+          {","}
+          {locality}
+        </h4>
       </div>
     </>
-    
-
   );
-}
+};
 
-const Footer=()=>{
-  return
+function filterData(searchText, restaurants) {
+  const filterData = restaurants.filter((restaurant) =>
+    restaurant?.info?.name?.toLowerCase()?.includes(searchText.toLowerCase())
+  );
+  return filterData;
 }
-const Applayout=()=>{
-  return(
+const api =
+  "https://www.swiggy.com/dapi/restaurants/list/v5?lat=12.28475216724439&lng=76.64010163396597&is-seo-homepage-enabled=true&page_type=DESKTOP_WEB_LISTIN";
+const Body = () => {
+  const [allrestaurants, setallrestaurants] = useState([]);
+  const [filteredrestaurants, setfilteredrestaurants] = useState([]);
+  const [searchText, setsearchText] = useState("");
+  useEffect(() => {
+    getRestaurants();
+  }, []);
+
+  async function getRestaurants() {
+    const data = await fetch(api);
+    const json = await data.json();
+    console.log(json);
+    setallrestaurants(
+      json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle?.restaurants
+    );
+    setfilteredrestaurants(
+      json?.data?.cards[1]?.card?.card?.gridElements?.infoWithStyle?.restaurants
+    );
+  }
+  console.log("render");
+  // if(filteredrestaurants?.length === 0)
+  // return <h2 className="nores">No matching restaurants </h2>
+  if (!allrestaurants) return null;
+
+  return allrestaurants?.length === 0 ? (
+    <Shimmer />
+  ) : (
     <>
-    <Header/>
-    <Body/>
-    <Footer/>
+      <div className="search-container">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="search"
+          value={searchText}
+          onChange={(e) => {
+            setsearchText(e.target.value);
+          }}
+        />
+        <button
+          className="search-btn"
+          onClick={() => {
+            const data = filterData(searchText, allrestaurants);
+            setfilteredrestaurants(data);
+          }}
+        >
+          search
+        </button>
+      </div>
+      <div className="restaurant-list">
+        {filteredrestaurants.map((restaurant) => {
+          return (
+            <Restaurantcard {...restaurant.info} key={restaurant.info.id} />
+          );
+        })}
+      </div>
     </>
   );
-}
+};
+
+const Footer = () => {
+  return;
+};
+const Applayout = () => {
+  return (
+    <>
+      <Headersection />
+      <Outlet />
+      <Footer />
+    </>
+  );
+};
+
+const appRouter = createBrowserRouter([
+  {
+    path: "/",
+    element: <Applayout />,
+    errorElement: <Error />,
+    children: [
+      { path: "/", element: <Body />, errorElement: <Error /> },
+      {
+        path: "/About",
+        element: <Abbout />,
+        errorElement: <Error />,
+      },
+      {
+        path: "/contact",
+        element: <Contact />,
+        errorElement: <Error />,
+      },
+      {
+        path:"/restaurant/:id",
+        element:<RestoMenu/>,
+
+      },
+    ],
+  },
+]);
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <Headersection/>
-    <Body/>
-  </React.StrictMode>
-);
+root.render(<RouterProvider router={appRouter} />);
+// <React.StrictMode>
+//   <Headersection/>
+//   <Body/>
+// </React.StrictMode>
